@@ -104,6 +104,13 @@ model Client {
   orders Order[]
 }
 
+model Coupon {
+  code        String   @id @db.VarChar(30)
+  percentOff  Int
+  validUntil  DateTime
+  createdAt   DateTime @default(now())
+}
+
 model Order {
   id String @id
 
@@ -126,6 +133,8 @@ model Order {
   miles         Int
   taxesBrl      Decimal @db.Decimal(10, 2)
   serviceFeeBrl Decimal @db.Decimal(10, 2)
+  couponCode    String? @db.VarChar(30)
+  discountBrl   Decimal @default(0) @db.Decimal(10, 2)
 
   status    OrderStatus @default(CONFIRMED)
   createdAt DateTime    @default(now())

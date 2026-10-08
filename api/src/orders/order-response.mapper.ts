@@ -26,6 +26,8 @@ export interface OrderResponse {
     miles: number;
     taxesBrl: number;
     serviceFeeBrl: number;
+    discountBrl: number;
+    couponCode: string | null;
     totalBrl: number;
     currency: string;
   };
@@ -34,6 +36,7 @@ export interface OrderResponse {
 export function toOrderResponse(order: Order, quote: QuoteComBusca): OrderResponse {
   const taxesBrl = Number(order.taxesBrl);
   const serviceFeeBrl = Number(order.serviceFeeBrl);
+  const discountBrl = Number(order.discountBrl);
 
   return {
     id: order.id,
@@ -62,7 +65,9 @@ export function toOrderResponse(order: Order, quote: QuoteComBusca): OrderRespon
       miles: order.miles,
       taxesBrl,
       serviceFeeBrl,
-      totalBrl: Math.round((taxesBrl + serviceFeeBrl) * 100) / 100,
+      discountBrl,
+      couponCode: order.couponCode,
+      totalBrl: Math.round((taxesBrl + serviceFeeBrl - discountBrl) * 100) / 100,
       currency: quote.currency,
     },
   };
