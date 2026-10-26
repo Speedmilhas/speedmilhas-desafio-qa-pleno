@@ -36,6 +36,7 @@ export const createOrderSchema = z
       .trim()
       .min(1)
       .max(200),
+    cupom: textoOpcional,
   })
   .transform((value) => {
     const raw = value.passageiro ?? value.passenger;
@@ -47,6 +48,7 @@ export const createOrderSchema = z
     return {
       quoteId: value.quoteId,
       idempotencyKey: value.idempotencyKey,
+      couponCode: value.cupom?.toUpperCase() ?? null,
       passenger: {
         name: passenger.nome ?? passenger.name ?? null,
         document: document === null ? null : document.replace(/[^a-zA-Z0-9]/g, ''),

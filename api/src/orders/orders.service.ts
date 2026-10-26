@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { createHash, randomUUID } from 'node:crypto';
 
+import { CouponsService } from '../coupons/coupons.service';
 import type { Order } from '../generated/prisma/client';
 import { priceOf } from '../pricing/service-fee';
 import { PrismaService } from '../prisma/prisma.service';
@@ -40,7 +41,10 @@ function isUniqueViolation(error: unknown): error is UniqueViolation {
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly coupons: CouponsService,
+  ) {}
 
   async create(clientId: string, request: CreateOrderRequest): Promise<CreateOrderResult> {
     const requestHash = this.hashRequest(clientId, request);
@@ -89,6 +93,8 @@ export class OrdersService {
     quote: QuoteComBusca,
   ): Promise<CreateOrderResult> {
     const pricing = priceOf(Number(quote.taxesBrl));
+    const coupon = request.couponCode ? await this.coupons.validar(request.couponCode) : null;
+    const desconto = this.coupons.calc(pricing.serviceFeeBrl, coupon);
 
     try {
       const order = await this.prisma.order.create({
@@ -105,6 +111,8 @@ export class OrdersService {
           miles: quote.miles,
           taxesBrl: pricing.taxesBrl,
           serviceFeeBrl: pricing.serviceFeeBrl,
+          couponCode: coupon?.code ?? null,
+          discountBrl: desconto,
         },
       });
 
@@ -181,6 +189,7 @@ export class OrdersService {
   private hashRequest(clientId: string, request: CreateOrderRequest): string {
     const canonical = JSON.stringify({
       clientId,
+      couponCode: request.couponCode,
       quoteId: request.quoteId,
       name: request.passenger.name,
       document: request.passenger.document,
